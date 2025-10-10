@@ -1,0 +1,105 @@
+# Windows PC RTMP Client Configuration
+
+stream:
+  # RTMP stream URL from Raspberry Pi
+  # Replace with your PC's IP if the Pi pushes to this machine
+  # url: "rtmp://127.0.0.1/live/cam"
+  url: "rtmp://192.168.100.23/live/cam"
+  # Using HTTP-FLV instead of RTMP for better compatibility
+  # url: "http://192.168.100.23:8080/live?app=live&stream=cam"
+
+
+  # Read timeout in seconds (triggers reconnect if no data received)
+  read_timeout_seconds: 10
+
+  # Reconnection settings
+  reconnect:
+    enabled: true
+    # Backoff schedule in seconds (±10% jitter added automatically)
+    backoff_seconds: [1, 2, 5, 10, 20, 30]
+
+recording:
+  # Enable/disable recording
+  enabled: true
+
+  # Output directory for recorded MP4 files
+  output_dir: "records/videos"
+
+  # Segment duration in seconds (10800 = 3 hours)
+  segment_seconds: 10800
+
+  # Minimum free disk space in MiB before pausing recording
+  disk_free_floor_mib: 500
+
+  # Free space threshold in MiB to resume recording
+  disk_free_resume_mib: 1024
+
+snapshots:
+  # Output directory for snapshot JPEG files
+  output_dir: "records/snapshots"
+
+  # Hotkey to trigger snapshot (if GUI integration exists)
+  hotkey: "s"
+
+  # Automatic snapshot interval in seconds (0 = disabled)
+  interval_seconds: 0
+
+logging:
+  # Log level: debug, info, service, error
+  level: info
+
+  # Log file path
+  file: "logs/client.log"
+
+  # Maximum log file size in MB before rotation
+  rotate_max_mb: 10
+
+  # Number of rotated log files to keep
+  rotate_backups: 5
+
+health:
+  # Health check interval in seconds
+  check_interval_seconds: 5
+
+ui:
+  # UI settings
+  enabled: true
+
+  # Window settings
+  window:
+    width: 1024
+    height: 768
+    remember_position: true
+    always_on_top: false
+    start_minimized: false
+    theme: "dark"  # dark or light
+
+  # System tray
+  system_tray:
+    enabled: true
+    minimize_to_tray: true
+    close_to_tray: true
+
+  # Hotkeys (can be customized)
+  hotkeys:
+    enabled: true
+    snapshot: "ctrl+shift+s"
+    start_recording: "ctrl+shift+r"
+    stop_recording: "ctrl+shift+x"
+    pause_recording: "ctrl+shift+p"
+    show_hide_window: "ctrl+shift+m"
+    fullscreen: "f11"
+
+  # Video preview
+  preview:
+    enabled: true
+    width: 640
+    height: 480
+    fps_limit: 30  # Limit GUI refresh rate
+
+  # Notifications
+  notifications:
+    enabled: true
+    show_on_disconnect: true
+    show_on_low_disk: true
+    show_on_recording_start: true
