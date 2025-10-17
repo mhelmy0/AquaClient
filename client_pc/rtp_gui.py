@@ -15,7 +15,6 @@ from modules.gui.main_window import MainWindow
 from modules.rtp_receiver import RTPReceiver
 from modules.rtp_recorder import RTPRecorder, RTPSnapshotCapture
 from modules.pi_health_monitor import PiHealthMonitor
-from modules.logging_json import setup_logging
 
 
 class RTPApplication:
@@ -37,12 +36,27 @@ class RTPApplication:
 
         # Setup logging
         log_config = self.config.get("logging", {})
-        self.logger = setup_logging(
-            log_file=log_config.get("file", "logs/client.log"),
-            level=log_config.get("level", "info"),
-            rotate_max_mb=log_config.get("rotate_max_mb", 10),
-            rotate_backups=log_config.get("rotate_backups", 5)
+        log_file = Path(log_config.get("file", "logs/client.log"))
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Configure logging
+        log_level_map = {
+            "debug": logging.DEBUG,
+            "info": logging.INFO,
+            "service": logging.INFO,
+            "error": logging.ERROR
+        }
+        log_level = log_level_map.get(log_config.get("level", "info").lower(), logging.INFO)
+
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_file),
+                logging.StreamHandler()
+            ]
         )
+        self.logger = logging.getLogger(__name__)
 
         # Initialize Qt application
         self.app = QApplication(sys.argv)
