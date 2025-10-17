@@ -123,24 +123,45 @@ class SimpleRTPWindow(QMainWindow):
         self.logger.info(message)
 
     def play_stream(self):
-        """Play the RTP stream using FFplay."""
+        """Play the RTP stream using FFplay with SDP file."""
         stream_url = self.rtp_receiver.get_stream_url()
 
         if not stream_url:
             self.log("ERROR: No stream URL available")
             return
 
-        self.log(f"Starting FFplay with URL: {stream_url}")
+        # Create SDP file for FFplay
+        sdp_file = Path("stream.sdp")
+        try:
+            if self.rtp_receiver.save_sdp_file(str(sdp_file)):
+                self.log(f"SDP file created: {sdp_file}")
+            else:
+                self.log("WARNING: Could not create SDP file, using direct URL")
+                sdp_file = None
+        except Exception as e:
+            self.log(f"WARNING: SDP file creation failed: {e}")
+            sdp_file = None
+
+        # Use SDP file if available, otherwise use direct URL
+        if sdp_file and sdp_file.exists():
+            input_source = str(sdp_file)
+            self.log(f"Starting FFplay with SDP file: {input_source}")
+        else:
+            input_source = stream_url
+            self.log(f"Starting FFplay with URL: {input_source}")
 
         try:
-            # FFplay command with minimal buffering
+            # FFplay command with minimal buffering and fast startup
             cmd = [
                 'ffplay',
                 '-protocol_whitelist', 'file,udp,rtp',
                 '-fflags', 'nobuffer',
                 '-flags', 'low_delay',
                 '-framedrop',
-                '-i', stream_url,
+                '-probesize', '32',           # Reduce probe size for faster startup
+                '-analyzeduration', '0',      # Don't wait to analyze stream
+                '-sync', 'ext',               # External clock sync
+                '-i', input_source,
                 '-window_title', 'RTP Stream from Raspberry Pi'
             ]
 
