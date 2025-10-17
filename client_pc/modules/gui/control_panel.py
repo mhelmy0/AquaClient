@@ -88,8 +88,47 @@ class ControlPanel(QWidget):
         actions_group.setLayout(actions_layout)
         main_layout.addWidget(actions_group)
 
-        # Health info group
-        health_group = QGroupBox("📊 Health Monitor")
+        # Raspberry Pi Health group
+        pi_health_group = QGroupBox("🍓 Raspberry Pi Health")
+        pi_health_layout = QVBoxLayout()
+
+        # Pi connection status
+        self.pi_status_label = QLabel("Status: Disconnected")
+        pi_health_layout.addWidget(self.pi_status_label)
+
+        # Temperature
+        self.pi_temp_label = QLabel("Temperature: N/A")
+        pi_health_layout.addWidget(self.pi_temp_label)
+
+        # Temperature progress bar
+        self.pi_temp_progress = QProgressBar()
+        self.pi_temp_progress.setMaximum(100)
+        self.pi_temp_progress.setValue(0)
+        self.pi_temp_progress.setTextVisible(True)
+        self.pi_temp_progress.setFormat("%v°C")
+        pi_health_layout.addWidget(self.pi_temp_progress)
+
+        # CPU usage
+        self.pi_cpu_label = QLabel("CPU Usage: N/A")
+        pi_health_layout.addWidget(self.pi_cpu_label)
+
+        # CPU usage progress bar
+        self.pi_cpu_progress = QProgressBar()
+        self.pi_cpu_progress.setMaximum(100)
+        self.pi_cpu_progress.setValue(0)
+        self.pi_cpu_progress.setTextVisible(True)
+        self.pi_cpu_progress.setFormat("%p%")
+        pi_health_layout.addWidget(self.pi_cpu_progress)
+
+        # Uptime
+        self.pi_uptime_label = QLabel("Uptime: N/A")
+        pi_health_layout.addWidget(self.pi_uptime_label)
+
+        pi_health_group.setLayout(pi_health_layout)
+        main_layout.addWidget(pi_health_group)
+
+        # Local Health info group
+        health_group = QGroupBox("💻 Local System")
         health_layout = QVBoxLayout()
 
         # Stream URL display
@@ -261,6 +300,71 @@ class ControlPanel(QWidget):
         progress_percent = int((elapsed_seconds / total_seconds) * 100) if total_seconds > 0 else 0
         self.segment_progress.setValue(progress_percent)
 
+    def update_pi_health(self, health_data: dict) -> None:
+        """
+        Update Raspberry Pi health display.
+
+        Args:
+            health_data: Dictionary containing Pi health metrics
+        """
+        # Update connection status
+        status = health_data.get('status', 'disconnected')
+        if status == 'healthy':
+            self.pi_status_label.setText("Status: ✅ Healthy")
+            self.pi_status_label.setStyleSheet("color: #4caf50;")
+        elif status == 'warning':
+            self.pi_status_label.setText("Status: ⚠️ Warning")
+            self.pi_status_label.setStyleSheet("color: #ff9800;")
+        elif status == 'critical':
+            self.pi_status_label.setText("Status: ❌ Critical")
+            self.pi_status_label.setStyleSheet("color: #f44336;")
+        else:
+            self.pi_status_label.setText("Status: Disconnected")
+            self.pi_status_label.setStyleSheet("color: #666;")
+
+        # Update temperature
+        temperature = health_data.get('temperature')
+        if temperature is not None:
+            temp_int = int(temperature)
+            self.pi_temp_label.setText(f"Temperature: {temperature:.1f}°C")
+            self.pi_temp_progress.setValue(temp_int)
+
+            # Color coding
+            if temp_int > 80:
+                self.pi_temp_progress.setStyleSheet("QProgressBar::chunk { background-color: #f44336; }")
+            elif temp_int > 70:
+                self.pi_temp_progress.setStyleSheet("QProgressBar::chunk { background-color: #ff9800; }")
+            else:
+                self.pi_temp_progress.setStyleSheet("QProgressBar::chunk { background-color: #4caf50; }")
+        else:
+            self.pi_temp_label.setText("Temperature: N/A")
+            self.pi_temp_progress.setValue(0)
+
+        # Update CPU usage
+        cpu_usage = health_data.get('cpu_usage')
+        if cpu_usage is not None:
+            cpu_int = int(cpu_usage)
+            self.pi_cpu_label.setText(f"CPU Usage: {cpu_usage:.1f}%")
+            self.pi_cpu_progress.setValue(cpu_int)
+
+            # Color coding
+            if cpu_int > 90:
+                self.pi_cpu_progress.setStyleSheet("QProgressBar::chunk { background-color: #f44336; }")
+            elif cpu_int > 70:
+                self.pi_cpu_progress.setStyleSheet("QProgressBar::chunk { background-color: #ff9800; }")
+            else:
+                self.pi_cpu_progress.setStyleSheet("QProgressBar::chunk { background-color: #4caf50; }")
+        else:
+            self.pi_cpu_label.setText("CPU Usage: N/A")
+            self.pi_cpu_progress.setValue(0)
+
+        # Update uptime
+        uptime_str = health_data.get('uptime_formatted')
+        if uptime_str:
+            self.pi_uptime_label.setText(f"Uptime: {uptime_str}")
+        else:
+            self.pi_uptime_label.setText("Uptime: N/A")
+
     def reset(self) -> None:
         """Reset all displays to default state."""
         self.set_recording_state(False)
@@ -271,3 +375,12 @@ class ControlPanel(QWidget):
         self.recording_file_label.setText("Recording: N/A")
         self.segment_label.setText("Segment: N/A")
         self.segment_progress.setValue(0)
+
+        # Reset Pi health
+        self.pi_status_label.setText("Status: Disconnected")
+        self.pi_status_label.setStyleSheet("color: #666;")
+        self.pi_temp_label.setText("Temperature: N/A")
+        self.pi_temp_progress.setValue(0)
+        self.pi_cpu_label.setText("CPU Usage: N/A")
+        self.pi_cpu_progress.setValue(0)
+        self.pi_uptime_label.setText("Uptime: N/A")

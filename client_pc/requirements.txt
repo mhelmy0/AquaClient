@@ -1,7 +1,10 @@
-# Python dependencies for Windows PC RTMP client
+# Python dependencies for Windows PC RTMP/RTP client
 
 # YAML configuration parsing
 PyYAML>=6.0
+
+# HTTP requests (for health monitoring and SDP fetching)
+requests>=2.31.0
 
 # System utilities (disk space monitoring)
 psutil>=5.9.0
