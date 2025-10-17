@@ -18,10 +18,10 @@ stream:
     # RTP port (as configured in your SDP)
     port: 5000
 
-    # Auto-discover SDP from server
-    auto_discover_sdp: true
+    # Auto-discover SDP from server (disabled for simplicity)
+    auto_discover_sdp: false
 
-    # SDP URL endpoint (will try to fetch from here)
+    # SDP URL endpoint (not used when auto_discover_sdp is false)
     sdp_url: "http://192.168.100.23/stream.sdp"
 
     # Manual SDP content (if auto-discover fails)

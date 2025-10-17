@@ -106,14 +106,14 @@ class RTPApplication:
         # Setup timers
         self._setup_timers()
 
-        # Auto-discover SDP if configured
-        if rtp_config.get("auto_discover_sdp", True):
-            self._auto_discover_sdp()
+        # Always use manual SDP for simplicity
+        manual_sdp = rtp_config.get("manual_sdp", "")
+        if manual_sdp:
+            self.logger.info("Using manual SDP configuration")
+            self.rtp_receiver.use_manual_sdp(manual_sdp)
+            self._setup_manual_sdp()
         else:
-            # Use manual SDP
-            manual_sdp = rtp_config.get("manual_sdp", "")
-            if manual_sdp:
-                self.rtp_receiver.use_manual_sdp(manual_sdp)
+            self.logger.warning("No manual SDP configured in config.yaml")
 
     def _connect_signals(self) -> None:
         """Connect GUI signals to handlers."""
@@ -140,29 +140,17 @@ class RTPApplication:
             update_interval = self.config.get("health", {}).get("pi_health", {}).get("update_interval", 5)
             self.pi_health_timer.start(update_interval * 1000)  # Convert to ms
 
-    def _auto_discover_sdp(self) -> None:
-        """Auto-discover SDP from server."""
-        rtp_config = self.config.get("stream", {}).get("rtp", {})
-        sdp_url = rtp_config.get("sdp_url")
-
-        self.logger.info("Auto-discovering SDP...")
-
-        if self.rtp_receiver.fetch_sdp(sdp_url):
-            self.logger.info("SDP auto-discovery successful")
-            self.main_window.log_viewer.add_log_simple("service", "SDP auto-discovery successful")
-
-            # Update stream URL in UI
-            stream_url = self.rtp_receiver.get_stream_url()
-            if stream_url:
-                self.main_window.control_panel.update_stream_url(stream_url)
+    def _setup_manual_sdp(self) -> None:
+        """Setup manual SDP configuration."""
+        # Get stream URL from config
+        stream_url = self.rtp_receiver.get_stream_url()
+        if stream_url:
+            self.logger.info(f"Stream URL ready: {stream_url}")
+            self.main_window.control_panel.update_stream_url(stream_url)
+            self.main_window.log_viewer.add_log_simple("service", f"Manual SDP configured: {stream_url}")
         else:
-            self.logger.warning("SDP auto-discovery failed, using manual SDP")
-            self.main_window.log_viewer.add_log_simple("warning", "SDP auto-discovery failed, using manual config")
-
-            # Fallback to manual SDP
-            manual_sdp = rtp_config.get("manual_sdp", "")
-            if manual_sdp:
-                self.rtp_receiver.use_manual_sdp(manual_sdp)
+            self.logger.error("Failed to get stream URL from SDP")
+            self.main_window.log_viewer.add_log_simple("error", "No stream URL available")
 
     def _update_pi_health(self) -> None:
         """Update Raspberry Pi health metrics."""
